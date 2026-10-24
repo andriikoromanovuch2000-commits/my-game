@@ -1,0 +1,19 @@
+{
+  "name": "tap-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local Aura clicker with private room-code races and cosmetic trades",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build:vercel": "node scripts/build-vercel.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "firebase-admin": "^13.5.0",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.0"
+  }
+}
