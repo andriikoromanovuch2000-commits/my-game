@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "installCommand": "echo 'No frontend dependencies required'",
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist"
+}

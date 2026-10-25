@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: emoji-clicker-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        value: https://clicker-89ea7-default-rtdb.europe-west1.firebasedatabase.app/
+      - key: FRONTEND_ORIGINS
+        value: https://clicker-89ea7.web.app,https://clicker-89ea7.firebaseapp.com,https://my-game-topaz-kappa.vercel.app,https://my-game-afwyondcj-emoji7.vercel.app
+      - key: ADMIN_PLAYER_ID
+        sync: false
