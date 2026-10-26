@@ -5,7 +5,6 @@ const path = require("node:path");
 const { promisify } = require("node:util");
 const admin = require("firebase-admin");
 const express = require("express");
-const { Server: SocketIOServer } = require("socket.io");
 const { WebSocket, WebSocketServer } = require("ws");
 
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -757,34 +756,7 @@ app.use((request, response) => {
   response.end(gamePage);
 });
 
-const server = https.createServer(app);
-const io = new SocketIOServer(server, { maxHttpsBufferSize: 2048 });
-const multiplayerPlayers = new Map();
-
-io.on("connection", socket => {
-  const player = { id: socket.id, x: 0, y: 0 };
-  multiplayerPlayers.set(socket.id, player);
-  socket.emit("players", Array.from(multiplayerPlayers.values()));
-  socket.broadcast.emit("playerJoined", player);
-
-  socket.on("move", position => {
-    if (!position || typeof position !== "object" ||
-        !Number.isFinite(position.x) || !Number.isFinite(position.y)) {
-      socket.emit("movementError", { message: "Position must include finite x and y numbers." });
-      return;
-    }
-
-    player.x = position.x;
-    player.y = position.y;
-    socket.broadcast.emit("playerMoved", player);
-  });
-
-  socket.on("disconnect", () => {
-    multiplayerPlayers.delete(socket.id);
-    socket.broadcast.emit("playerLeft", socket.id);
-  });
-});
-
+const server = http.createServer(app);
 const webSockets = new WebSocketServer({
   server,
   path: "/multiplayer",
