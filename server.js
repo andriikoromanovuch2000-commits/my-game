@@ -353,7 +353,7 @@ async function handleApi(request, response, pathname) {
   }
   if (pathname === "/api/admin/accounts" && request.method === "GET") {
     if (!requireAdmin(request, response)) return;
-    const search = (new URL(request.url, "http://localhost").searchParams.get("search") || "").trim().toLowerCase();
+    const search = (new URL(request.url, "https://my-game-0hzz.onrender.com").searchParams.get("search") || "").trim().toLowerCase();
     const accounts = Object.values(accountStore.accounts)
       .filter(account => !search || account.username.toLowerCase().includes(search) || account.id.toLowerCase().includes(search))
       .sort((first, second) => first.username.localeCompare(second.username))
@@ -370,7 +370,7 @@ async function handleApi(request, response, pathname) {
   }
   if (pathname === "/api/admin/account" && request.method === "GET") {
     if (!requireAdmin(request, response)) return;
-    const playerId = (new URL(request.url, "http://localhost").searchParams.get("playerId") || "").trim().toUpperCase();
+    const playerId = (new URL(request.url, "https://my-game-0hzz.onrender.com").searchParams.get("playerId") || "").trim().toUpperCase();
     const account = Object.values(accountStore.accounts).find(item => item.id === playerId);
     if (!account) return sendJson(response, 404, { error: "No account has that player ID." });
     return sendJson(response, 200, {
@@ -696,7 +696,7 @@ async function handleApi(request, response, pathname) {
 
 const app = express();
 app.use((request, response) => {
-  const pathname = new URL(request.url, "http://localhost").pathname;
+  const pathname = new URL(request.url, "https://my-game-0hzz.onrender.com").pathname;
   const secureHeaders = {
     "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
     "Referrer-Policy": "no-referrer",
@@ -757,8 +757,8 @@ app.use((request, response) => {
   response.end(gamePage);
 });
 
-const server = http.createServer(app);
-const io = new SocketIOServer(server, { maxHttpBufferSize: 2048 });
+const server = https.createServer(app);
+const io = new SocketIOServer(server, { maxHttpsBufferSize: 2048 });
 const multiplayerPlayers = new Map();
 
 io.on("connection", socket => {
@@ -1509,7 +1509,7 @@ loadAccountStore().then(store => {
   return migrateAccountStore();
 }).then(() => {
   server.listen(PORT, "0.0.0.0", () => {
-    console.log("Emoji Clicker is ready at http://localhost:" + PORT + " (accounts and saves stored in Firebase).");
+    console.log("Emoji Clicker is ready at https://my-game-0hzz.onrender.com:" + PORT + " (accounts and saves stored in Firebase).");
   });
 }).catch(error => {
   console.error("Could not load the Firebase account store:", error.message);
