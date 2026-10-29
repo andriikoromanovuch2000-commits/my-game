@@ -11,7 +11,8 @@ peer-to-peer.
 2. Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the Firebase service-account JSON
    value in Render's secret environment settings. Never put it in frontend
    files or Firebase Hosting.
-3. Set `ADMIN_PLAYER_ID` to the owner player's ID.
+3. Set `ADMIN_PLAYER_ID` to the owner player's ID. This also keeps the owner
+   visible on the leaderboard beyond the top 50, at their actual rank.
 4. Keep the generated service URL consistent with the URL in
    `backend-config.js`. The configured URL is
    `https://my-game-0hzz.onrender.com`.

@@ -32,9 +32,12 @@ const ECONOMY_UPGRADES = {
 };
 const INVITE_TTL_MS = 60_000;
 const MAX_TAPS_PER_SECOND = 20;
+const MAX_AURA = BigInt("99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999");
 const ROOM_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const PLAYER_ID_CHARACTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const RACE_TYPES = new Set(["click", "economy"]);
+const RACE_TYPES = new Set(["click", "economy", "roulette"]);
+const ROULETTE_MULTIPLIERS = { red: 2, black: 2, green: 10 };
+const ROULETTE_POCKET_COUNT = 13;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const SESSION_COOKIE = "aura_session";
 const PASSWORD_BYTES = 64;
@@ -46,7 +49,8 @@ const COSMETIC_IDS = new Set([
   "penguin", "unicorn", "pizza", "avocado", "shark", "koala", "fox", "owl", "turtle",
   "cherry", "cookie", "sun", "moon", "robot", "alien", "crown", "fire", "snowflake",
   "watermelon", "tiger", "whale", "chicken", "cupcake", "butterfly", "dolphin", "leaf",
-  "music", "diamond", "rocketship", "poop", "rainbow-poop", "mystery-poop"
+  "music", "diamond", "rocketship", "beaver", "otter", "peacock", "sloth", "seal",
+  "hedgehog", "parrot", "swan", "poop", "rainbow-poop", "mystery-poop"
 ]);
 const BACKGROUND_IDS = new Set([
   "mint", "sunset", "ice", "galaxy", "forest", "candy", "aurora", "ocean", "volcano", "cloud",
@@ -229,10 +233,15 @@ function validPassword(value) {
 function validateSave(save) {
   if (!save || typeof save !== "object" || Array.isArray(save)) return null;
   const numberKeys = [
-    "chips", "total", "tapPower", "fingerLevel", "doubleLevel", "autoLevel",
+    "tapPower", "fingerLevel", "doubleLevel", "autoLevel",
     "superAutoLevel", "autoPower", "level"
   ];
   const clean = {};
+  for (const key of ["chips", "total"]) {
+    const value = parseAuraInteger(save[key]);
+    if (value === null) return null;
+    clean[key] = value.toString();
+  }
   for (const key of numberKeys) {
     if (!Number.isSafeInteger(save[key]) || save[key] < 0) return null;
     clean[key] = save[key];
@@ -272,6 +281,22 @@ function validateSave(save) {
   };
   clean.profileName = "";
   return clean;
+}
+
+function parseAuraInteger(value) {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value) || value < 0) return null;
+    value = String(value);
+  }
+  if (typeof value !== "string" || !/^\d{1,161}$/.test(value)) return null;
+  const amount = BigInt(value);
+  return amount <= MAX_AURA ? amount : null;
+}
+
+function auraValue(value) {
+  const parsed = parseAuraInteger(value);
+  if (parsed === null) throw new Error("Stored Aura balance is invalid.");
+  return parsed;
 }
 
 async function readJsonBody(request) {
@@ -361,8 +386,8 @@ async function handleApi(request, response, pathname) {
         username: account.username,
         playerId: account.id,
         banned: Boolean(account.banned),
-        aura: account.save.chips,
-        total: account.save.total,
+        aura: auraValue(account.save.chips).toString(),
+        total: auraValue(account.save.total).toString(),
         cosmetics: account.save.ownedSkins.length
       }));
     return sendJson(response, 200, { accounts });
@@ -405,16 +430,25 @@ async function handleApi(request, response, pathname) {
     });
   }
   if (pathname === "/api/leaderboard" && request.method === "GET") {
-    const entries = Object.values(accountStore.accounts)
+    const rankedAccounts = Object.values(accountStore.accounts)
       .map(account => ({
         id: account.id,
         username: account.username,
-        total: account.save.total,
-        level: Math.floor(account.save.chips / 50) + 1
+        total: auraValue(account.save.total).toString(),
+        level: Number((auraValue(account.save.chips) / 50n + 1n) > BigInt(Number.MAX_SAFE_INTEGER)
+          ? BigInt(Number.MAX_SAFE_INTEGER) : auraValue(account.save.chips) / 50n + 1n),
+        isOwner: isAdminAccount(account)
       }))
-      .sort((first, second) => second.total - first.total || first.username.localeCompare(second.username))
-      .slice(0, 50)
+      .sort((first, second) => {
+        const totalDifference = auraValue(second.total) - auraValue(first.total);
+        return (totalDifference > 0n ? 1 : totalDifference < 0n ? -1 : 0) ||
+          first.username.localeCompare(second.username);
+      })
       .map((entry, index) => ({ rank: index + 1, ...entry }));
+    const entries = rankedAccounts.slice(0, 50);
+    const owner = rankedAccounts.find(entry => entry.isOwner);
+    if (owner && !entries.includes(owner)) entries.push(owner);
+    entries.sort((first, second) => first.rank - second.rank);
     return sendJson(response, 200, { entries });
   }
 
@@ -449,23 +483,28 @@ async function handleApi(request, response, pathname) {
         return sendJson(response, 400, { error: "The configured admin account cannot be disabled or deleted." });
       }
       if (action === "adjust-aura") {
-        const amount = body.amount;
-        if (!Number.isSafeInteger(amount) || amount === 0 ||
-            !Number.isSafeInteger(account.save.chips + amount) || account.save.chips + amount < 0) {
+        const amountText = typeof body.amount === "string" ? body.amount : String(body.amount);
+        if (!/^-?\d{1,161}$/.test(amountText) || /^-?0+$/.test(amountText)) {
+          return sendJson(response, 400, { error: "Enter a non-zero whole Aura adjustment." });
+        }
+        const amount = BigInt(amountText);
+        const currentBalance = auraValue(account.save.chips);
+        const nextBalance = currentBalance + amount;
+        if (amount > MAX_AURA || amount < -MAX_AURA || nextBalance < 0n || nextBalance > MAX_AURA) {
           return sendJson(response, 400, { error: "Enter a non-zero whole Aura adjustment that keeps the balance at zero or above." });
         }
-        const save = { ...account.save, chips: account.save.chips + amount };
+        const save = { ...account.save, chips: nextBalance.toString() };
         await persistAccountStore({
           accounts: { ...accountStore.accounts, [key]: { ...account, save } }
         });
         return sendJson(response, 200, { ok: true, message: "Aura balance updated.", aura: save.chips, save });
       }
       if (action === "set-aura") {
-        const amount = body.amount;
-        if (!Number.isSafeInteger(amount) || amount < 0) {
+        const amount = parseAuraInteger(body.amount);
+        if (amount === null) {
           return sendJson(response, 400, { error: "Enter a whole Aura balance of zero or more." });
         }
-        const save = { ...account.save, chips: amount };
+        const save = { ...account.save, chips: amount.toString() };
         await persistAccountStore({
           accounts: { ...accountStore.accounts, [key]: { ...account, save } }
         });
@@ -836,6 +875,8 @@ function createRoom(players, mode, inviteeId = null, raceType = "click") {
       { aura: 0, earned: 0, tapPower: 1, tapLevel: 0, autoPower: 0, autoLevel: 0 }
     ],
     economyTimer: null,
+    rouletteBets: [null, null],
+    rouletteResolving: false,
     racing: false,
     raceTimer: null,
     inviteTimer: null,
@@ -914,6 +955,119 @@ function sendEconomyState(room) {
           ? ECONOMY_UPGRADES.auto.baseCost * (2 ** autoLevel) : null
       })),
       player: index + 1
+    });
+  });
+}
+
+function submitRouletteBet(room, client, color, stake) {
+  const playerIndex = client.playerNumber - 1;
+  const stakeAmount = parseAuraInteger(stake);
+  if (!Object.hasOwn(ROULETTE_MULTIPLIERS, color) ||
+      stakeAmount === null || stakeAmount < 1n) {
+    send(client, { type: "roulette-error", message: "Choose red, black, or green and enter a whole Aura stake." });
+    return;
+  }
+  if (room.players.length !== 2 || room.mode === "practice") {
+    send(client, { type: "roulette-error", message: "Color Roulette requires another real player in the room." });
+    return;
+  }
+  if (room.rouletteResolving || room.rouletteBets[playerIndex]) {
+    send(client, { type: "roulette-error", message: "Your bet is already placed for this spin." });
+    return;
+  }
+  const account = accountStore.accounts[client.username.toLowerCase()];
+  if (!account || account.id !== client.accountId) {
+    send(client, { type: "roulette-error", message: "Your account could not be verified. Reconnect and try again." });
+    return;
+  }
+  const currentBalance = auraValue(account.save.chips);
+  if (stakeAmount > currentBalance) {
+    send(client, { type: "roulette-error", message: "Your stake is higher than your available Aura balance." });
+    return;
+  }
+  const maximumPayout = stakeAmount * BigInt(ROULETTE_MULTIPLIERS[color]);
+  if (maximumPayout > MAX_AURA || currentBalance - stakeAmount + maximumPayout > MAX_AURA) {
+    send(client, { type: "roulette-error", message: "That stake is too large to settle safely. Choose a smaller amount." });
+    return;
+  }
+  room.rouletteBets[playerIndex] = { color, stake: stakeAmount.toString() };
+  send(client, { type: "roulette-bet-accepted" });
+  if (!room.rouletteBets.every(Boolean)) return;
+
+  room.rouletteResolving = true;
+  const bets = room.rouletteBets.map(bet => ({ ...bet }));
+  void serializeStoreWrite(async () => {
+    if (room.players.length !== 2 || room.players.some(player =>
+      player.readyState !== WebSocket.OPEN || player.roomCode !== room.players[0].roomCode)) {
+      return { error: "Both players must remain in the room to finish this spin." };
+    }
+    const accounts = room.players.map(player => accountStore.accounts[player.username.toLowerCase()]);
+    if (accounts.some((entry, index) => !entry || entry.id !== room.players[index].accountId)) {
+      return { error: "A player account could not be verified. No Aura was changed." };
+    }
+    for (let index = 0; index < accounts.length; index += 1) {
+      if (BigInt(bets[index].stake) > auraValue(accounts[index].save.chips)) {
+        return { error: "A player's balance changed before the bets were matched. No Aura was changed." };
+      }
+    }
+    const pocket = crypto.randomInt(ROULETTE_POCKET_COUNT);
+    const resultColor = pocket === 12 ? "green" : pocket % 2 === 0 ? "red" : "black";
+    const multiplier = ROULETTE_MULTIPLIERS[resultColor];
+    const nextAccounts = { ...accountStore.accounts };
+    const balances = accounts.map((entry, index) => {
+      const payout = bets[index].color === resultColor
+        ? BigInt(bets[index].stake) * BigInt(multiplier) : 0n;
+      const balance = auraValue(entry.save.chips) - BigInt(bets[index].stake) + payout;
+      if (payout > MAX_AURA || balance < 0n || balance > MAX_AURA) {
+        return null;
+      }
+      const key = room.players[index].username.toLowerCase();
+      nextAccounts[key] = { ...entry, save: { ...entry.save, chips: balance.toString() } };
+      return { balance: balance.toString(), payout: payout.toString() };
+    });
+    if (balances.some(entry => entry === null)) {
+      return { error: "That stake is too large to settle safely. Choose a smaller amount." };
+    }
+    await persistAccountStore({ accounts: nextAccounts });
+    return { resultColor, pocket, multiplier, balances };
+  }).then(result => {
+    if (result.error) {
+      room.rouletteBets = [null, null];
+      room.rouletteResolving = false;
+      broadcast(room, { type: "roulette-error", message: result.error });
+      return;
+    }
+    room.rouletteBets = [null, null];
+    room.rouletteResolving = false;
+    room.players.forEach((player, index) => {
+      const bet = bets[index];
+      const settlement = result.balances[index];
+      send(player, {
+        type: "roulette-result",
+        resultColor: result.resultColor,
+        pocket: result.pocket,
+        multiplier: result.multiplier,
+        playerColor: bet.color,
+        stake: bet.stake,
+        won: bet.color === result.resultColor,
+        payout: settlement.payout,
+        balance: settlement.balance,
+        player: index + 1,
+        bets: bets.map((placedBet, betIndex) => ({
+          color: placedBet.color,
+          stake: placedBet.stake,
+          won: placedBet.color === result.resultColor,
+          payout: result.balances[betIndex].payout
+        }))
+      });
+    });
+  }, error => {
+    console.error("Could not settle online roulette bets:", error);
+    room.rouletteBets = [null, null];
+    room.rouletteResolving = false;
+    broadcast(room, {
+      type: "roulette-error",
+      message: "The roulette spin could not be saved. No Aura was changed; please try again."
     });
   });
 }
@@ -1116,6 +1270,10 @@ webSockets.on("connection", (client, request) => {
         client.matchmakingTimer = setTimeout(() => {
           if (!client.matchmaking || !matchmakingQueue.includes(client)) return;
           removeFromMatchmaking(client);
+          if (raceType === "roulette") {
+            send(client, { type: "error", message: "No real player was found. Color Roulette needs another player; try again or invite a friend." });
+            return;
+          }
           createPracticeRoom(client, raceType);
         }, MATCHMAKING_TIMEOUT_MS);
         return;
@@ -1310,6 +1468,15 @@ webSockets.on("connection", (client, request) => {
     }
     const playerIndex = client.playerNumber - 1;
 
+    if (message.type === "roulette-bet") {
+      if (room.raceType !== "roulette") {
+        send(client, { type: "roulette-error", message: "This room is not a Color Roulette room." });
+        return;
+      }
+      submitRouletteBet(room, client, message.color, message.stake);
+      return;
+    }
+
     if (message.type === "inventory-sync") {
       const now = Date.now();
       if (now - client.inventoryWindowStart >= 1000) {
@@ -1329,6 +1496,10 @@ webSockets.on("connection", (client, request) => {
     }
 
     if (message.type === "start-race") {
+      if (room.raceType === "roulette") {
+        leaveWithError(client, "Use Place roulette bet to play Color Roulette.");
+        return;
+      }
       if (client.playerNumber !== 1 || room.players.length !== 2 || room.racing) {
         leaveWithError(client, "Wait for both players. Player 1 starts the race.");
         return;

@@ -559,6 +559,35 @@
       transition: transform 1.4s cubic-bezier(.12,.72,.18,1);
     }
     .wheel-label { position: absolute; color: #171329; font-size: 1.25rem; font-weight: 900; }
+    .roulette-color-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .roulette-color-button[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .color-wheel-wrap { display: grid; justify-items: center; }
+    .color-wheel-pointer { margin-bottom: -10px; color: #fff9e8; font-size: 1.8rem; line-height: 1; z-index: 1; }
+    .color-wheel-stage { position: relative; width: 210px; height: 210px; }
+    .color-wheel {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border: 6px solid #fff9e8;
+      border-radius: 50%;
+      background: conic-gradient(
+        #d83b52 0deg 27.6923deg, #24212d 27.6923deg 55.3846deg,
+        #d83b52 55.3846deg 83.0769deg, #24212d 83.0769deg 110.7692deg,
+        #d83b52 110.7692deg 138.4615deg, #24212d 138.4615deg 166.1538deg,
+        #d83b52 166.1538deg 193.8461deg, #24212d 193.8461deg 221.5384deg,
+        #d83b52 221.5384deg 249.2307deg, #24212d 249.2307deg 276.923deg,
+        #d83b52 276.923deg 304.6153deg, #24212d 304.6153deg 332.3076deg,
+        #278b56 332.3076deg 360deg);
+      box-shadow: 0 0 24px #75f0c055, inset 0 0 0 3px #171329;
+      transform: rotate(0deg);
+      transition: transform 4.2s cubic-bezier(.12,.72,.18,1);
+    }
+    .color-wheel::before { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(transparent 0deg 27deg, #fff9e8 27deg 27.6923deg); content: ""; }
+    .color-wheel::after { position: absolute; top: 50%; left: 50%; width: 52px; height: 52px; border: 4px solid #fff9e8; border-radius: 50%; background: radial-gradient(circle, #80602e 0 30%, #d2a84e 31% 55%, #28203e 56%); content: ""; transform: translate(-50%, -50%); }
+    .color-wheel-ball { position: absolute; top: 50%; left: 50%; z-index: 1; width: 14px; height: 14px; border: 2px solid #fff9e8; border-radius: 50%; background: #fff; box-shadow: 0 0 8px #fff; transform: translate(-50%, -50%) rotate(0deg) translateY(-92px); }
+    .color-wheel-stage[data-spinning="true"] .color-wheel-ball { animation: roulette-ball-orbit .75s linear infinite; }
+    @keyframes roulette-ball-orbit { to { transform: translate(-50%, -50%) rotate(360deg) translateY(-92px); } }
+    body.reduce-motion .color-wheel { transition-duration: .02s; }
     .wheel-zero { top: 16%; right: 19%; font-size: .8rem; }
     .wheel-zero-two { top: 37%; right: 8%; font-size: .8rem; }
     .wheel-zero-three { bottom: 37%; right: 8%; font-size: .8rem; }
@@ -887,7 +916,7 @@
             <span class="wheel-center" aria-hidden="true">✨</span>
           </div>
           <label class="room-join">Aura to risk
-            <input id="aura-bet" type="number" min="1" max="1000000000" step="1" value="10" inputmode="numeric">
+            <input id="aura-bet" type="text" inputmode="numeric" maxlength="161" value="10">
           </label>
           <button class="buy" id="bet-all" type="button">ALL IN</button>
           <button class="buy" id="spin-button" type="button">Spin Aura roulette</button>
@@ -895,12 +924,36 @@
         </div>
         </div>
         <div class="casino-game">
+          <h3 id="color-roulette-title">🎯 Color roulette</h3>
+          <p class="muted">Choose red ×2, black ×2, or green ×10, then risk pretend Aura. A winning payout includes your stake; a miss loses it.</p>
+          <div class="wheel-area">
+            <div class="color-wheel-wrap" aria-hidden="true">
+              <span class="color-wheel-pointer">▼</span>
+              <div class="color-wheel-stage">
+                <div class="color-wheel" id="color-roulette-wheel"></div>
+                <span class="color-wheel-ball"></span>
+              </div>
+            </div>
+            <div class="roulette-color-options" role="group" aria-label="Choose a roulette color">
+              <button class="buy roulette-color-button" type="button" data-roulette-color="red" aria-pressed="true">🔴 Red ×2</button>
+              <button class="buy roulette-color-button" type="button" data-roulette-color="black" aria-pressed="false">⚫ Black ×2</button>
+              <button class="buy roulette-color-button" type="button" data-roulette-color="green" aria-pressed="false">🟢 Green ×10</button>
+            </div>
+            <label class="room-join">Aura to risk
+              <input id="color-roulette-stake" type="text" inputmode="numeric" maxlength="161" value="10">
+            </label>
+            <button class="buy" id="color-roulette-spin" type="button">Spin color roulette</button>
+            <p class="race-status" id="color-roulette-status" aria-live="polite">Choose a color and a whole Aura amount you can afford.</p>
+            <button class="buy" id="color-roulette-online" type="button">Play Color Roulette with a player</button>
+          </div>
+        </div>
+        <div class="casino-game">
         <h3 id="coinflip-title">🪙 Aura coin flip</h3>
         <p class="muted">A simple 50/50 game using only pretend Aura. Pick heads or tails, enter a stake, and win back 2× your stake if the coin lands on your pick. A miss loses the stake. No real money or prizes.</p>
         <div class="wheel-area">
           <div class="case-box" id="coin-display" aria-live="polite">🪙</div>
           <label class="room-join">Aura to risk
-            <input id="coin-stake" type="number" min="1" max="9007199254740991" step="1" value="10" inputmode="numeric">
+            <input id="coin-stake" type="text" inputmode="numeric" maxlength="161" value="10">
           </label>
           <div class="race-buttons">
             <button class="buy" id="coin-heads" type="button">🙂 Heads</button>
@@ -974,7 +1027,7 @@
         <div class="friend-grid" id="friend-requests" aria-live="polite"></div>
         <h3 class="shop-category">💚 Your friends</h3>
         <div class="friend-grid" id="friends-list"></div>
-        <h3 class="shop-category">📬 Race invitations</h3>
+        <h3 class="shop-category">📬 Game invitations</h3>
         <div class="friend-grid" id="friend-invites" aria-live="polite"></div>
         <div class="race-buttons">
           <button class="buy online-connect" type="button">Connect to friends</button>
@@ -1023,12 +1076,13 @@
       </section>
       <section class="panel wide" data-screen="online" hidden aria-labelledby="online-title">
         <h2 id="online-title">Race online with a friend</h2>
-        <p class="muted">Sign in first. Use a made-up username, not your real name. Firebase stores account data and saves; the game service handles friend invites, room codes, and direct-connection setup, but does not run player-hosted races. Never share your password or personal details. No chat or Aura stakes. Direct peer connections share network addresses with the other player and the Google STUN service; only connect with people you trust. Some networks block direct connections. An adult must help host the account and connection service over HTTPS. The room creator's device hosts each race, not a dedicated game server running it 24/7.</p>
+        <p class="muted">Sign in first. Use a made-up username, not your real name. Firebase stores account data and saves; the game service handles friend invites, room codes, and direct-connection setup. Color roulette is server-run and uses pretend Aura from your saved balance; it has no cash value or prizes. Never share your password or personal details. No chat. Direct peer connections share network addresses with the other player and the Google STUN service; only connect with people you trust. Some networks block direct connections. An adult must help host the account and connection service over HTTPS. The room creator's device hosts races, not roulette.</p>
         <div class="race-buttons">
-          <label class="room-join">Online race mode
+          <label class="room-join">Online game mode
             <select id="online-mode">
               <option value="click">Quick Tap — highest tap count</option>
               <option value="economy">Aura Builder — start at zero, buy upgrades</option>
+              <option value="roulette">Color Roulette — bet against a player</option>
             </select>
           </label>
           <label class="room-join">Aura Builder time limit
@@ -1039,7 +1093,7 @@
               <option value="600000">10 minutes</option>
             </select>
           </label>
-          <p class="muted">The room creator hosts the race from their device. In Aura Builder, the host picks the time and starts the match. Match Aura starts at zero and never saves to your account.</p>
+          <p class="muted">The room creator hosts races from their device. In Aura Builder, the host picks the time and starts the match. Roulette is server-run: both players choose a color and stake, then share one spin. Correct picks pay red ×2, black ×2, or green ×10 from the saved pretend-Aura balance.</p>
           <button class="buy online-connect" type="button">Connect to friends</button>
           <button class="buy" id="create-room" type="button">Create room</button>
           <label class="room-join">Room code
@@ -1064,6 +1118,31 @@
             <button class="buy" id="online-economy-tap-upgrade" type="button" disabled>Upgrade tap</button>
             <button class="buy" id="online-economy-auto-upgrade" type="button" disabled>Buy auto Aura</button>
           </div>
+        </div>
+        <div class="casino-game" id="online-roulette-controls" hidden>
+          <h3>🎯 Player color roulette</h3>
+          <p class="muted">You and your opponent each place one color bet. The server spins one shared result after both bets arrive. A winning bet returns its stake × the color multiplier; a losing bet loses its stake.</p>
+          <div class="wheel-area">
+            <div class="color-wheel-wrap" aria-hidden="true">
+              <span class="color-wheel-pointer">▼</span>
+              <div class="color-wheel-stage">
+                <div class="color-wheel" id="online-color-roulette-wheel"></div>
+                <span class="color-wheel-ball"></span>
+              </div>
+            </div>
+          </div>
+          <label class="room-join">Your stake (available: <span id="online-roulette-balance">0</span> Aura)
+            <input id="online-roulette-stake" type="text" inputmode="numeric" maxlength="161" value="10">
+          </label>
+          <label class="room-join">Choose a color
+            <select id="online-roulette-color">
+              <option value="red">Red ×2</option>
+              <option value="black">Black ×2</option>
+              <option value="green">Green ×10</option>
+            </select>
+          </label>
+          <button class="buy" id="online-roulette-bet" type="button" disabled>Place roulette bet</button>
+          <p class="race-status" id="online-roulette-status" aria-live="polite">Join a Color Roulette room, then choose a color and stake.</p>
         </div>
         <div class="race-score">
           <span>Player 1: <strong id="online-score-one">0</strong></span>
@@ -1174,8 +1253,9 @@
           <div class="profile-actions">
             <button class="buy" id="admin-view-save" type="button">View saved data</button>
             <label class="room-join">Aura amount / new balance
-              <input id="admin-aura-amount" type="number" min="0" max="9007199254740991" step="1" value="100">
+              <input id="admin-aura-amount" type="text" inputmode="numeric" maxlength="161" pattern="[0-9]{1,161}" value="100">
             </label>
+            <p class="muted">Enter a whole number up to 161 digits. Aura balances are stored exactly, including values larger than 1 Qa.</p>
             <button class="buy" id="admin-add-aura" type="button">Add Aura</button>
             <button class="buy" id="admin-remove-aura" type="button">Remove Aura</button>
             <button class="buy" id="admin-set-aura" type="button">Set Aura balance</button>
@@ -1327,6 +1407,14 @@
       { id: "music", kind: "emoji", name: "Music", emoji: "🎵", cost: 3900 },
       { id: "diamond", kind: "emoji", name: "Diamond", emoji: "💎", cost: 4000 },
       { id: "rocketship", kind: "emoji", name: "Rocketship", emoji: "🚀", cost: 4200 },
+      { id: "beaver", kind: "emoji", name: "Beaver", emoji: "🦫", cost: 4300 },
+      { id: "otter", kind: "emoji", name: "Otter", emoji: "🦦", cost: 4500 },
+      { id: "peacock", kind: "emoji", name: "Peacock", emoji: "🦚", cost: 4700 },
+      { id: "sloth", kind: "emoji", name: "Sloth", emoji: "🦥", cost: 4900 },
+      { id: "seal", kind: "emoji", name: "Seal", emoji: "🦭", cost: 5100 },
+      { id: "hedgehog", kind: "emoji", name: "Hedgehog", emoji: "🦔", cost: 5300 },
+      { id: "parrot", kind: "emoji", name: "Parrot", emoji: "🦜", cost: 5500 },
+      { id: "swan", kind: "emoji", name: "Swan", emoji: "🦢", cost: 5700 },
       { id: "poop", kind: "emoji", name: "Poop", emoji: "💩", cost: 0, rarity: "legendary", caseOnly: true, info: "A legendary case-only emoji with a golden glow." },
       { id: "rainbow-poop", kind: "emoji", name: "Rainbow Poop", emoji: "🌈💩", cost: 0, rarity: "mythic", caseOnly: true, info: "A mythic case-only emoji with a shifting rainbow aura." },
       { id: "mystery-poop", kind: "emoji", name: "Mystery Poop", emoji: "🕳️", cost: 0, rarity: "secret", caseOnly: true, info: "A secret emoji hidden behind a dark mystery effect." }
@@ -1371,7 +1459,34 @@
     function cosmeticPrice(item) {
       return item.cost === 0 ? 0 : Math.min(Number.MAX_SAFE_INTEGER, Math.round(item.cost * item.cost / 100));
     }
+    function auraBigInt(value) {
+      if (typeof value === "bigint") return value >= 0n && value <= MAX_AURA ? value : null;
+      if (typeof value === "number") {
+        if (!Number.isSafeInteger(value) || value < 0) return null;
+        value = String(value);
+      }
+      if (typeof value !== "string" || !/^\d{1,161}$/.test(value)) return null;
+      const amount = BigInt(value);
+      return amount <= MAX_AURA ? amount : null;
+    }
+    function serializedState() {
+      return JSON.stringify({ ...state, chips: state.chips.toString(), total: state.total.toString() });
+    }
     function formatAura(value) {
+      if (typeof value === "string" && /^\d+$/.test(value)) value = BigInt(value);
+      if (typeof value === "bigint") {
+        if (value < 1000n) return value.toLocaleString();
+        const digits = value.toString();
+        const tier = Math.floor((digits.length - 1) / 3);
+        const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+        const exponent = tier * 3;
+        const lead = digits.slice(0, digits.length - exponent);
+        const decimals = digits.slice(lead.length, lead.length + 2).replace(/0+$/, "");
+        const label = tier < suffixes.length
+          ? lead + (decimals ? "." + decimals : "") + suffixes[tier]
+          : lead + (decimals ? "." + decimals : "") + "e" + exponent;
+        return label;
+      }
       if (!Number.isFinite(value)) return String(value);
       const absolute = Math.abs(value);
       if (absolute < 1000) return value.toLocaleString();
@@ -1388,8 +1503,9 @@
     }
     function setAuraText(element, value, unit = "Aura") {
       element.textContent = formatAura(value);
-      element.title = value.toLocaleString() + " " + unit;
-      element.setAttribute("aria-label", value.toLocaleString() + " " + unit);
+      const exactValue = value.toLocaleString();
+      element.title = exactValue + " " + unit;
+      element.setAttribute("aria-label", exactValue + " " + unit);
     }
     function setMoneyButton(button, label, value, unit = "Aura") {
       button.textContent = label + formatAura(value) + " " + unit;
@@ -1463,8 +1579,9 @@
       { id: "upgrades-100", emoji: "🔧", title: "Super builder", info: "Buy 100 upgrade levels.", stat: "upgrades", target: 100, reward: 25000 },
       { id: "collection-40", emoji: "🏆", title: "Full style vault", info: "Own 40 different cosmetics.", stat: "collection", target: 40, reward: 50000 }
     ];
+    const MAX_AURA = BigInt("99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999");
     const initialState = {
-      chips: 0, total: 0, tapPower: 1, fingerLevel: 0, doubleLevel: 0, autoLevel: 0, superAutoLevel: 0,
+      chips: 0n, total: 0n, tapPower: 1, fingerLevel: 0, doubleLevel: 0, autoLevel: 0, superAutoLevel: 0,
       autoPower: 0, upgradeLevels: Array(UPGRADES.length).fill(0), claimedAchievements: [], friendMatchWins: [0, 0],
       ownedSkins: ["mint", "bolt", "smile"], guestSkins: ["mint", "cat", "star"],
       activeSkin: "mint", activeEmoji: "smile", level: 1, profileName: "",
@@ -1507,6 +1624,11 @@
     let wheelSpinning = false;
     let wheelResultMessage = "";
     let wheelMessageUntil = 0;
+    let colorRouletteSpinning = false;
+    let colorRouletteTimer = null;
+    const colorWheelRotations = new WeakMap();
+    let selectedRouletteColor = "red";
+    let colorRouletteMessage = "";
     let caseOpening = false;
     let caseTimer = null;
     let caseRollTimer = null;
@@ -1527,6 +1649,8 @@
     let onlinePlayers = 0;
     let onlineRaceActive = false;
     let onlineRaceType = "click";
+    let onlineRoulettePending = false;
+    let onlineRouletteAnimating = false;
     let onlineRaceTimer = null;
     let onlineRaceEndsAt = 0;
     let onlineEconomyPlayers = [];
@@ -1570,6 +1694,7 @@
         const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
         if (!saved || typeof saved !== "object") return freshState();
         const numberValue = (key, fallback) => Number.isSafeInteger(saved[key]) && saved[key] >= 0 ? saved[key] : fallback;
+        const auraValue = (key, fallback) => auraBigInt(saved[key]) ?? fallback;
         const ownedSkins = Array.isArray(saved.ownedSkins)
           ? [...new Set(saved.ownedSkins.filter(id => Object.hasOwn(COSMETIC_BY_ID, id)))]
           : ["mint", "bolt", "smile"];
@@ -1599,8 +1724,8 @@
         upgradeLevels[4] = Math.max(upgradeLevels[4], numberValue("autoLevel", numberValue("signs", 0)));
         upgradeLevels[5] = Math.max(upgradeLevels[5], numberValue("superAutoLevel", 0));
         return {
-          chips: numberValue("chips", 0),
-          total: numberValue("total", 0),
+          chips: auraValue("chips", 0n),
+          total: auraValue("total", 0n),
           tapPower: numberValue("tapPower", 1),
           fingerLevel: numberValue("fingerLevel", 0),
           doubleLevel: numberValue("doubleLevel", 0),
@@ -1618,7 +1743,8 @@
           guestSkins,
           activeSkin: ownedSkins.includes(saved.activeSkin) && COSMETIC_BY_ID[saved.activeSkin].kind === "background" ? saved.activeSkin : "mint",
           activeEmoji: ownedSkins.includes(saved.activeEmoji) && COSMETIC_BY_ID[saved.activeEmoji].kind === "emoji" ? saved.activeEmoji : "smile",
-          level: Math.floor(numberValue("chips", 0) / goalSize) + 1,
+          level: Number((auraValue("chips", 0n) / BigInt(goalSize) + 1n) > BigInt(Number.MAX_SAFE_INTEGER)
+            ? BigInt(Number.MAX_SAFE_INTEGER) : auraValue("chips", 0n) / BigInt(goalSize) + 1n),
           profileName: typeof saved.profileName === "string" &&
             /^[A-Za-z0-9 _-]{2,16}$/.test(saved.profileName.trim()) ? saved.profileName.trim() : "",
           ownedTitles,
@@ -1637,7 +1763,7 @@
 
     function saveGame() {
       try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+        localStorage.setItem(SAVE_KEY, serializedState());
         syncOnlineInventory();
         scheduleCloudSave();
       } catch (error) {
@@ -1733,7 +1859,7 @@
       });
       friendData.friends.forEach(person => {
         friends.append(makeFriendCard(person, [
-          { label: "Invite to race / trade", action: "challenge", id: person.id },
+          { label: "Invite to game / trade", action: "challenge", id: person.id },
           { label: "Remove friend", action: "remove", id: person.id }
         ]));
       });
@@ -1741,7 +1867,7 @@
         invites.append(makeFriendCard(
           { username: invite.fromUsername || "Friend", id: invite.fromId },
           [
-            { label: "Accept race invite", action: "accept-invite", id: invite.roomCode },
+            { label: invite.raceType === "roulette" ? "Accept roulette invite" : "Accept game invite", action: "accept-invite", id: invite.roomCode },
             { label: "Decline", action: "decline-invite", id: invite.roomCode }
           ]
         ));
@@ -1795,7 +1921,7 @@
         const result = await accountRequest("/api/leaderboard");
         if (!Array.isArray(result.entries) || result.entries.some(entry =>
           !Number.isSafeInteger(entry.rank) || typeof entry.username !== "string" ||
-          typeof entry.id !== "string" || !Number.isSafeInteger(entry.total) ||
+          typeof entry.id !== "string" || auraBigInt(entry.total) === null ||
           !Number.isSafeInteger(entry.level))) {
           throw new Error("The leaderboard returned invalid ranking data.");
         }
@@ -1804,15 +1930,16 @@
           row.className = "friend-card";
           const player = document.createElement("strong");
           player.textContent = "#" + entry.rank + " " + entry.username;
+          if (entry.isOwner) player.textContent += " 👑 Owner";
           const id = document.createElement("span");
           id.textContent = "ID: " + entry.id;
           const stats = document.createElement("span");
           stats.textContent = formatAura(entry.total) + " total Aura · Level " + entry.level.toLocaleString();
-          stats.title = entry.total.toLocaleString() + " total Aura · Level " + entry.level.toLocaleString();
+          stats.title = auraBigInt(entry.total).toLocaleString() + " total Aura · Level " + entry.level.toLocaleString();
           row.append(player, id, stats);
           list.append(row);
         });
-        status.textContent = result.entries.length ? "Top " + result.entries.length + " players" : "No players are ranked yet.";
+        status.textContent = result.entries.length ? "Top " + Math.min(result.entries.length, 50) + " players; the owner is included even outside the top 50." : "No players are ranked yet.";
       } catch (error) {
         status.textContent = error.message;
       }
@@ -1925,7 +2052,7 @@
           authReady = false;
           try {
             loadCloudSave(result.save);
-            lastCloudSave = JSON.stringify(state);
+            lastCloudSave = serializedState();
           } finally {
             authReady = true;
           }
@@ -1979,7 +2106,7 @@
       cloudSaveInFlight = true;
       cloudSavePromise = (async () => {
         while (authUser) {
-          const snapshot = JSON.stringify(state);
+          const snapshot = serializedState();
           setAccountMessage("Saving your game to the cloud…");
           try {
             await accountRequest("/api/save", { save: JSON.parse(snapshot) });
@@ -1997,7 +2124,7 @@
             return false;
           }
           lastCloudSave = snapshot;
-          if (snapshot === JSON.stringify(state)) {
+          if (snapshot === serializedState()) {
             setAccountMessage("Cloud save complete.");
             return true;
           }
@@ -2009,7 +2136,7 @@
       } finally {
         cloudSavePromise = null;
         cloudSaveInFlight = false;
-        if (authUser && lastCloudSave !== JSON.stringify(state)) scheduleCloudSave();
+        if (authUser && lastCloudSave !== serializedState()) scheduleCloudSave();
       }
     }
 
@@ -2017,7 +2144,7 @@
       if (!save || typeof save !== "object") throw new Error("The account has no usable game save.");
       localStorage.setItem(SAVE_KEY, JSON.stringify(save));
       state = loadGame();
-      lastCloudSave = JSON.stringify(state);
+      lastCloudSave = serializedState();
       render();
     }
 
@@ -2030,7 +2157,7 @@
         if (cloudResult.save) loadCloudSave(cloudResult.save);
         await refreshFriends();
         await refreshAdminAccess();
-        lastCloudSave = JSON.stringify(state);
+        lastCloudSave = serializedState();
         setAccountMessage("Signed in. Your game progress is backed up to the cloud.");
       } catch (error) {
         if (error.status === 401) {
@@ -2129,7 +2256,7 @@
           ? "Lv. " + level.toLocaleString() + " · Next cost: " + formatAura(cost) + " Aura"
           : "Cost exceeds Aura limit";
         if (Number.isSafeInteger(cost)) button.title = "Next cost: " + cost.toLocaleString() + " Aura";
-        button.disabled = !Number.isSafeInteger(cost) || state.chips < cost;
+        button.disabled = !Number.isSafeInteger(cost) || state.chips < BigInt(cost);
         details.append(title, description);
         card.append(details, button);
         upgradeList.append(card);
@@ -2161,7 +2288,10 @@
       achievementList.replaceChildren();
       achievementPage = updateListPager("achievement", achievementPage, ACHIEVEMENTS.length, ACHIEVEMENTS_PER_PAGE);
       ACHIEVEMENTS.slice(achievementPage * ACHIEVEMENTS_PER_PAGE, (achievementPage + 1) * ACHIEVEMENTS_PER_PAGE).forEach(achievement => {
-        const progress = Math.min(achievement.target, achievementProgress(achievement));
+        const progressValue = achievementProgress(achievement);
+        const progress = typeof progressValue === "bigint"
+          ? Number(progressValue >= BigInt(achievement.target) ? BigInt(achievement.target) : progressValue)
+          : Math.min(achievement.target, progressValue);
         const complete = progress >= achievement.target;
         const claimed = state.claimedAchievements.includes(achievement.id);
         const card = document.createElement("article");
@@ -2275,7 +2405,7 @@
           const price = cosmeticPrice(item);
           if (owned) button.textContent = "Owned";
           else setMoneyButton(button, "Buy: ", price);
-          button.disabled = owned || state.chips < price;
+          button.disabled = owned || state.chips < BigInt(price);
         }
       }
       card.append(icon, name, type, badge, detailsButton, details, button);
@@ -2322,7 +2452,7 @@
         if (equipped) button.textContent = "Equipped";
         else if (owned) button.textContent = "Equip title";
         else setMoneyButton(button, "Buy: ", title.cost);
-        button.disabled = equipped || (!owned && state.chips < title.cost);
+        button.disabled = equipped || (!owned && state.chips < BigInt(title.cost));
         button.dataset.titleId = title.id;
         button.dataset.titleAction = owned ? "equip" : "buy";
         card.append(heading, badge, info, button);
@@ -2358,7 +2488,9 @@
     }
 
     function render() {
-      state.level = Math.floor(state.chips / goalSize) + 1;
+      const currentLevel = state.chips / BigInt(goalSize) + 1n;
+      state.level = Number(currentLevel > BigInt(Number.MAX_SAFE_INTEGER)
+        ? BigInt(Number.MAX_SAFE_INTEGER) : currentLevel);
       setAuraText(chipsDisplay, state.chips);
       setAuraText(totalDisplay, state.total);
       setAuraText(powerDisplay, state.tapPower, "Aura per tap");
@@ -2396,7 +2528,7 @@
       document.getElementById("setting-reduced-motion").checked = state.settings.reducedMotion;
       document.getElementById("setting-confirm-games").checked = state.settings.confirmBets;
 
-      const inLevel = state.chips % goalSize;
+      const inLevel = Number(state.chips % BigInt(goalSize));
       const percent = Math.floor((inLevel / goalSize) * 100);
       progressBar.style.width = percent + "%";
       progressTrack.setAttribute("aria-valuenow", String(percent));
@@ -2406,46 +2538,67 @@
       renderCosmetics();
       renderAchievements();
       renderTrade();
-      const stake = Number(document.getElementById("aura-bet").value);
-      const validStake = Number.isSafeInteger(stake) && stake > 0 && stake <= state.chips;
+      const stake = auraBigInt(document.getElementById("aura-bet").value);
+      const validStake = stake !== null && stake > 0n && stake <= state.chips;
       spinButton.disabled = wheelSpinning || !validStake;
       document.getElementById("aura-bet").disabled = wheelSpinning;
-      document.getElementById("bet-all").disabled = wheelSpinning || state.chips === 0;
+      document.getElementById("bet-all").disabled = wheelSpinning || state.chips === 0n;
       if (wheelSpinning || Date.now() < wheelMessageUntil) {
         document.getElementById("wheel-status").textContent = wheelResultMessage;
       } else {
         document.getElementById("wheel-status").textContent = validStake
           ? "You can risk " + formatAura(stake) + " Aura. The wheel might take it or pay out Aura."
-          : state.chips === 0
+          : state.chips === 0n
             ? "Earn some Aura before risking any on the wheel."
             : "Choose a whole Aura amount you can afford to risk.";
       }
       document.querySelectorAll("[data-case-cost]").forEach(button => {
         const cost = Number(button.dataset.caseCost);
-        button.disabled = caseOpening || !Number.isSafeInteger(cost) || state.chips < cost;
+        button.disabled = caseOpening || !Number.isSafeInteger(cost) || state.chips < BigInt(cost);
         button.textContent = caseOpening && currentCaseTier.cost === cost
           ? "Opening..." : "Open for " + formatAura(cost) + " Aura";
         button.title = "Case cost: " + cost.toLocaleString() + " Aura";
       });
       document.getElementById("case-status").textContent = caseMessage;
-      const coinStake = Number(document.getElementById("coin-stake").value);
-      const coinValid = Number.isSafeInteger(coinStake) && coinStake > 0 &&
-        coinStake <= state.chips && Number.isSafeInteger(state.chips + coinStake);
+      const coinStake = auraBigInt(document.getElementById("coin-stake").value);
+      const coinValid = coinStake !== null && coinStake > 0n &&
+        coinStake <= state.chips && state.chips + coinStake <= MAX_AURA;
       document.getElementById("coin-stake").disabled = coinFlipping;
       document.getElementById("coin-heads").disabled = coinFlipping || !coinValid;
       document.getElementById("coin-tails").disabled = coinFlipping || !coinValid;
+      const colorStake = auraBigInt(document.getElementById("color-roulette-stake").value);
+      const colorMultiplier = BigInt(selectedRouletteColor === "green" ? 10 : 2);
+      const colorValid = colorStake !== null && colorStake > 0n &&
+        colorStake <= state.chips && colorStake * colorMultiplier <= MAX_AURA &&
+        state.chips - colorStake + colorStake * colorMultiplier <= MAX_AURA;
+      document.getElementById("color-roulette-stake").disabled = colorRouletteSpinning;
+      document.getElementById("color-roulette-spin").disabled = colorRouletteSpinning || !colorValid;
+      document.querySelectorAll(".roulette-color-button").forEach(button => {
+        button.disabled = colorRouletteSpinning;
+        button.setAttribute("aria-pressed", String(button.dataset.rouletteColor === selectedRouletteColor));
+      });
+      if (!colorRouletteSpinning && !colorRouletteMessage) {
+        document.getElementById("color-roulette-status").textContent = colorValid
+          ? "Choose a color and spin for " + formatAura(colorStake) + " Aura."
+          : "Choose a whole Aura amount you can afford to risk.";
+      } else {
+        document.getElementById("color-roulette-status").textContent = colorRouletteMessage;
+      }
+      renderOnlineRoulette();
     }
 
     function collect(amount) {
-      if (!Number.isSafeInteger(amount) || amount < 1 ||
-          !Number.isSafeInteger(state.chips + amount) ||
-          !Number.isSafeInteger(state.total + amount)) {
-        console.error("Aura total reached the safe number limit; no more Aura was added.");
+      const auraAmount = typeof amount === "bigint" ? amount : Number.isSafeInteger(amount) ? BigInt(amount) : null;
+      if (auraAmount === null || auraAmount < 1n ||
+          state.chips + auraAmount > MAX_AURA || state.total + auraAmount > MAX_AURA) {
+        console.error("Aura total reached the configured maximum; no more Aura was added.");
         return;
       }
-      state.chips += amount;
-      state.total += amount;
-      const newLevel = Math.floor(state.chips / goalSize) + 1;
+      state.chips += auraAmount;
+      state.total += auraAmount;
+      const levelValue = state.chips / BigInt(goalSize) + 1n;
+      const newLevel = Number(levelValue > BigInt(Number.MAX_SAFE_INTEGER)
+        ? BigInt(Number.MAX_SAFE_INTEGER) : levelValue);
       if (newLevel > state.level) {
         state.level = newLevel;
         chipsDisplay.classList.remove("pop");
@@ -2457,15 +2610,15 @@
     }
 
     function spinBonusWheel() {
-      const stake = Number(document.getElementById("aura-bet").value);
-      if (wheelSpinning || !Number.isSafeInteger(stake) || stake < 1 || stake > state.chips) return;
+      const stake = auraBigInt(document.getElementById("aura-bet").value);
+      if (wheelSpinning || stake === null || stake < 1n || stake > state.chips) return;
       if (state.settings.confirmBets &&
           !window.confirm("Risk " + formatAura(stake) + " pretend Aura on the roulette wheel? Exact amount: " + stake.toLocaleString() + ". You could lose it all.")) return;
       const prizes = [0, 0, 0, 0, 2, 2, 4, 6];
       const prizeIndex = Math.floor(Math.random() * prizes.length);
       const multiplier = prizes[prizeIndex];
-      const payout = stake * multiplier;
-      if (!Number.isSafeInteger(payout) || !Number.isSafeInteger(state.chips - stake + payout)) {
+      const payout = stake * BigInt(multiplier);
+      if (payout > MAX_AURA || state.chips - stake + payout > MAX_AURA) {
         document.getElementById("wheel-status").textContent = "That stake is too large. Choose a smaller Aura amount.";
         return;
       }
@@ -2483,18 +2636,65 @@
         wheelSpinning = false;
         render();
       }, 1500);
-      if (payout > 0) state.chips += payout;
+      if (payout > 0n) state.chips += payout;
       saveGame();
       render();
       window.setTimeout(render, 4500);
     }
 
+    function spinColorRoulette() {
+      const stake = auraBigInt(document.getElementById("color-roulette-stake").value);
+      const multiplier = BigInt(selectedRouletteColor === "green" ? 10 : 2);
+      if (colorRouletteSpinning || stake === null || stake < 1n ||
+          stake > state.chips || stake * multiplier > MAX_AURA ||
+          state.chips - stake + stake * multiplier > MAX_AURA) return;
+      if (state.settings.confirmBets &&
+          !window.confirm("Risk " + formatAura(stake) + " pretend Aura on " +
+            selectedRouletteColor + "? You could lose it all.")) return;
+      const resultPocket = Math.floor(Math.random() * 13);
+      const resultColor = resultPocket === 12 ? "green" :
+        resultPocket % 2 === 0 ? "red" : "black";
+      const resultMultiplier = resultColor === "green" ? 10 : 2;
+      const won = selectedRouletteColor === resultColor;
+      const payout = won ? stake * BigInt(resultMultiplier) : 0n;
+      const duration = animateColorRouletteWheel(
+        document.getElementById("color-roulette-wheel"), resultPocket);
+      state.chips -= stake;
+      colorRouletteSpinning = true;
+      colorRouletteMessage = "The roulette wheel is spinning…";
+      saveGame();
+      render();
+      colorRouletteTimer = window.setTimeout(() => {
+        colorRouletteTimer = null;
+        document.getElementById("color-roulette-wheel").parentElement.dataset.spinning = "false";
+        state.chips += payout;
+        colorRouletteMessage = won
+          ? resultColor.toUpperCase() + "! Your " + formatAura(stake) +
+            " Aura stake paid " + formatAura(payout) + " Aura."
+          : resultColor.toUpperCase() + ". You lost " + formatAura(stake) + " Aura.";
+        colorRouletteSpinning = false;
+        saveGame();
+        render();
+      }, duration + 100);
+    }
+
+    function animateColorRouletteWheel(wheel, pocketIndex) {
+      const destination = (360 - ((pocketIndex + 0.5) * 360 / 13)) % 360;
+      const current = colorWheelRotations.get(wheel) || 0;
+      const adjustment = (destination - (current % 360) + 360) % 360;
+      const next = current + 5 * 360 + adjustment;
+      colorWheelRotations.set(wheel, next);
+      wheel.parentElement.dataset.spinning = "true";
+      wheel.style.transform = "rotate(" + next + "deg)";
+      return document.body.classList.contains("reduce-motion") ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 20 : 4300;
+    }
+
     function flipCoin(side) {
       const stakeInput = document.getElementById("coin-stake");
-      const stake = Number(stakeInput.value);
+      const stake = auraBigInt(stakeInput.value);
       if (coinFlipping || !["heads", "tails"].includes(side) ||
-          !Number.isSafeInteger(stake) || stake < 1 || stake > state.chips ||
-          !Number.isSafeInteger(stake * 2) || !Number.isSafeInteger(state.chips + stake)) return;
+          stake === null || stake < 1n || stake > state.chips || state.chips + stake > MAX_AURA) return;
       if (state.settings.confirmBets &&
           !window.confirm("Risk " + formatAura(stake) + " pretend Aura on the coin flip? Exact amount: " + stake.toLocaleString() + ". You could lose it all.")) return;
       coinFlipping = true;
@@ -2577,8 +2777,8 @@
     function openCase(cost) {
       const tier = CASE_TIERS.find(item => item.cost === cost);
       if (!tier || caseOpening) return;
-      if (state.chips < tier.cost) {
-        caseMessage = "You need " + formatAura(tier.cost - state.chips) + " more Aura for this case.";
+      if (state.chips < BigInt(tier.cost)) {
+        caseMessage = "You need " + formatAura(BigInt(tier.cost) - state.chips) + " more Aura for this case.";
         render();
         return;
       }
@@ -2613,10 +2813,10 @@
       }
       const item = eligible[Math.floor(Math.random() * eligible.length)];
       currentCaseTier = tier;
-      state.chips -= tier.cost;
+      state.chips -= BigInt(tier.cost);
       let resultMessage;
       if (state.ownedSkins.includes(item.id)) {
-        if (Number.isSafeInteger(state.chips + tier.refund)) state.chips += tier.refund;
+        if (state.chips + BigInt(tier.refund) <= MAX_AURA) state.chips += BigInt(tier.refund);
         resultMessage = "Duplicate " + item.emoji + " " + item.name + " (" + rarityLabel(chosenRarity.id) +
           ")! You got " + formatAura(tier.refund) + " Aura back.";
       } else {
@@ -2652,9 +2852,11 @@
     function claimAchievement(achievementId) {
       const achievement = ACHIEVEMENTS.find(item => item.id === achievementId);
       if (!achievement || state.claimedAchievements.includes(achievementId) ||
-          achievementProgress(achievement) < achievement.target ||
-          !Number.isSafeInteger(state.chips + achievement.reward) ||
-          !Number.isSafeInteger(state.total + achievement.reward)) return;
+          (typeof achievementProgress(achievement) === "bigint"
+            ? achievementProgress(achievement) < BigInt(achievement.target)
+            : achievementProgress(achievement) < achievement.target) ||
+          state.chips + BigInt(achievement.reward) > MAX_AURA ||
+          state.total + BigInt(achievement.reward) > MAX_AURA) return;
       state.claimedAchievements.push(achievementId);
       collect(achievement.reward);
     }
@@ -2664,8 +2866,8 @@
       if (!item) return;
       if (action === "buy") {
         const price = cosmeticPrice(item);
-        if (item.caseOnly || state.ownedSkins.includes(item.id) || state.chips < price) return;
-        state.chips -= price;
+        if (item.caseOnly || state.ownedSkins.includes(item.id) || state.chips < BigInt(price)) return;
+        state.chips -= BigInt(price);
         state.ownedSkins.push(item.id);
       } else if (action !== "equip" || !state.ownedSkins.includes(item.id)) {
         return;
@@ -2680,8 +2882,8 @@
       const title = TITLE_CATALOG.find(item => item.id === titleId);
       if (!title) return;
       if (action === "buy") {
-        if (state.ownedTitles.includes(title.id) || state.chips < title.cost) return;
-        state.chips -= title.cost;
+        if (state.ownedTitles.includes(title.id) || state.chips < BigInt(title.cost)) return;
+        state.chips -= BigInt(title.cost);
         state.ownedTitles.push(title.id);
       } else if (!state.ownedTitles.includes(title.id)) {
         return;
@@ -2696,13 +2898,13 @@
       const upgrade = UPGRADES[index];
       const level = state.upgradeLevels[index];
       const cost = upgrade.cost * (2 ** level);
-      if (!Number.isSafeInteger(cost) || state.chips < cost ||
+      if (!Number.isSafeInteger(cost) || state.chips < BigInt(cost) ||
           !Number.isSafeInteger(level + 1)) return;
       const nextValue = upgrade.type === "auto"
         ? state.autoPower + upgrade.amount
         : state.tapPower + upgrade.amount;
       if (!Number.isSafeInteger(nextValue)) return;
-      state.chips -= cost;
+      state.chips -= BigInt(cost);
       if (upgrade.type === "auto") state.autoPower = nextValue;
       else state.tapPower = nextValue;
       state.upgradeLevels[index] = level + 1;
@@ -2750,6 +2952,10 @@
       document.getElementById("online-status").textContent = message;
     }
 
+    function normalizeOnlineMode(mode) {
+      return mode === "economy" || mode === "roulette" ? mode : "click";
+    }
+
     function updateOnlineButtons() {
       const connected = Boolean(socket && socket.readyState === WebSocket.OPEN);
       const connecting = Boolean(socket && socket.readyState === WebSocket.CONNECTING);
@@ -2759,9 +2965,11 @@
       document.getElementById("online-start").disabled =
         !connected || onlinePlayer !== 1 || onlinePlayers !== 2 || onlineRaceActive ||
         (onlineRoomMode !== "practice" && (!onlinePeerChannel || onlinePeerChannel.readyState !== "open"));
+      document.getElementById("online-start").hidden = onlineRaceType === "roulette";
       document.getElementById("online-start").textContent =
         onlineRaceType === "economy" ? "Start Aura Builder" : "Start online race";
       document.getElementById("online-tap").disabled = !onlineRaceActive || onlineRaceType !== "click";
+      document.getElementById("online-tap").hidden = onlineRaceType !== "click";
       modeSelect.disabled = inRoom || onlineMatchmaking;
       durationSelect.disabled = onlineRaceType !== "economy" || onlineRaceActive ||
         onlineMatchmaking || (inRoom && onlinePlayer !== 1);
@@ -2781,6 +2989,25 @@
       document.getElementById("online-trade-accept").hidden = !onlinePendingTrade || onlinePendingTrade.direction !== "incoming";
       document.getElementById("online-trade-decline").hidden = !onlinePendingTrade || onlinePendingTrade.direction !== "incoming";
       renderOnlineEconomy();
+      renderOnlineRoulette();
+    }
+
+    function renderOnlineRoulette() {
+      const panel = document.getElementById("online-roulette-controls");
+      const visible = Boolean(onlineRoom && onlineRaceType === "roulette");
+      panel.hidden = !visible;
+      if (!visible) return;
+      const stakeInput = document.getElementById("online-roulette-stake");
+      const stake = auraBigInt(stakeInput.value);
+      const multiplier = document.getElementById("online-roulette-color").value === "green" ? 10 : 2;
+      const validStake = stake !== null && stake > 0n && stake <= state.chips &&
+        stake * BigInt(multiplier) <= MAX_AURA &&
+        state.chips - stake + stake * BigInt(multiplier) <= MAX_AURA;
+      setAuraText(document.getElementById("online-roulette-balance"), state.chips);
+      stakeInput.disabled = onlineRoulettePending || onlineRouletteAnimating;
+      document.getElementById("online-roulette-color").disabled = onlineRoulettePending || onlineRouletteAnimating;
+      document.getElementById("online-roulette-bet").disabled =
+        onlinePlayers !== 2 || onlineRoulettePending || onlineRouletteAnimating || !validStake;
     }
 
     function renderOnlineEconomy() {
@@ -2880,7 +3107,7 @@
     function handlePeerRaceEvent(message) {
       if (message.type === "race-started") {
         onlineRaceActive = true;
-        onlineRaceType = message.raceType === "economy" ? "economy" : "click";
+        onlineRaceType = normalizeOnlineMode(message.raceType);
         document.getElementById("online-score-one").textContent = "0";
         document.getElementById("online-score-two").textContent = "0";
         document.getElementById("online-score-one").parentElement.firstChild.textContent =
@@ -3186,7 +3413,7 @@
           return;
         }
         if (data.type === "connected") {
-          setOnlineStatus("Connected. You can receive friend invites or search for a random player.");
+          setOnlineStatus("Connected. You can receive friend game invites or search for a random player.");
           updateOnlineButtons();
         } else if (data.type === "friend-list-changed") {
           void refreshFriends();
@@ -3195,8 +3422,10 @@
             : "Your friends list was updated.");
         } else if (data.type === "queue-joined") {
           onlineMatchmaking = true;
-          onlineRaceType = data.raceType === "economy" ? "economy" : "click";
-          setOnlineStatus("Searching for a real player. If nobody is available after a few seconds, you'll get a clearly labeled computer practice match.");
+          onlineRaceType = normalizeOnlineMode(data.raceType);
+          setOnlineStatus(onlineRaceType === "roulette"
+            ? "Searching for another player. Color Roulette requires a real player."
+            : "Searching for a real player. If nobody is available after a few seconds, you'll get a clearly labeled computer practice match.");
         } else if (data.type === "matchmaking-cancelled") {
           onlineMatchmaking = false;
           pendingOnlineAction = null;
@@ -3206,11 +3435,13 @@
             fromId: data.fromId,
             fromUsername: data.fromUsername,
             roomCode: data.roomCode,
-            raceType: data.raceType === "economy" ? "economy" : "click"
+            raceType: normalizeOnlineMode(data.raceType)
           });
           renderFriends();
-          setFriendsStatus("A friend invited you to race. Accept or decline in the Friend games screen.");
-          setOnlineStatus("A friend race invitation is waiting on the Friend games screen.");
+          setFriendsStatus(data.raceType === "roulette"
+            ? "A friend invited you to Color Roulette. Accept or decline in the Friend games screen."
+            : "A friend invited you to a game. Accept or decline in the Friend games screen.");
+          setOnlineStatus("A friend game invitation is waiting on the Friend games screen.");
         } else if (data.type === "invite-declined" || data.type === "invite-expired") {
           resetOnlinePeerConnection();
           if (data.roomCode) {
@@ -3223,6 +3454,7 @@
           onlinePlayers = 0;
           onlineRaceActive = false;
           onlineRaceType = "click";
+          onlineRoulettePending = false;
           onlineEconomyPlayers = [];
           window.clearInterval(onlineRaceTimer);
           onlineRaceTimer = null;
@@ -3235,7 +3467,8 @@
           onlinePlayer = data.player;
           onlinePlayers = data.players;
           onlineMatchmaking = false;
-          onlineRaceType = data.raceType === "economy" ? "economy" : "click";
+          onlineRaceType = normalizeOnlineMode(data.raceType);
+          onlineRoulettePending = false;
           document.getElementById("online-mode").value = onlineRaceType;
           onlineEconomyPlayers = [];
           onlineOpponentId = data.opponentId || null;
@@ -3249,23 +3482,31 @@
             ? "Room code: " + onlineRoom + " — you are Player " + onlinePlayer + ". Share the code with your friend." + opponentLabel
             : data.mode === "random"
               ? "Matched with a random player — you are Player " + onlinePlayer + "." + opponentLabel
-              : "Friend race and trade room — you are Player " + onlinePlayer + "." + opponentLabel;
+              : "Friend game and trade room — you are Player " + onlinePlayer + "." + opponentLabel;
           setOnlineStatus(onlinePlayers === 2
             ? data.mode === "practice"
               ? onlineRaceType === "economy" ? "Aura Builder practice is ready. Set the time limit, then start."
                 : "Aura Bot practice is starting."
               : onlinePlayer === 1
-                ? "Both players are here. Connecting directly. You will host and start the race."
-                : "Both players are here. Connecting directly to the room creator..."
-            : "Waiting for your friend to accept the invite...");
+                ? onlineRaceType === "roulette" ? "Both players are here. Choose a color and stake, then place your bet."
+                  : "Both players are here. Connecting directly. You will host and start the race."
+                : onlineRaceType === "roulette" ? "Both players are here. Choose a color and stake to place your bet."
+                  : "Both players are here. Connecting directly to the room creator..."
+            : onlineRaceType === "roulette"
+              ? "Waiting for your opponent to join the room..."
+              : "Waiting for your friend to accept the invite...");
           syncOnlineInventory();
-          createOnlinePeerConnection();
+          if (onlineRaceType !== "roulette") createOnlinePeerConnection();
           updateOnlineButtons();
         } else if (data.type === "players") {
           onlinePlayers = data.count;
           if (onlinePlayers === 2) {
-            createOnlinePeerConnection();
-            setOnlineStatus("Both players are here. Connecting directly to the room creator...");
+            if (onlineRaceType === "roulette") {
+              setOnlineStatus("Both players are here. Choose a color and stake to place your bet.");
+            } else {
+              createOnlinePeerConnection();
+              setOnlineStatus("Both players are here. Connecting directly to the room creator...");
+            }
           } else {
             setOnlineStatus("Waiting for a friend to join...");
           }
@@ -3313,9 +3554,58 @@
           }
         } else if (data.type === "economy-error") {
           setOnlineStatus(data.message);
+        } else if (data.type === "roulette-bet-accepted") {
+          onlineRoulettePending = true;
+          document.getElementById("online-roulette-status").textContent =
+            "Your bet is placed. Waiting for your opponent to choose a color and stake.";
+          updateOnlineButtons();
+        } else if (data.type === "roulette-error") {
+          onlineRoulettePending = false;
+          document.getElementById("online-roulette-status").textContent = data.message;
+          updateOnlineButtons();
+        } else if (data.type === "roulette-result") {
+          onlineRoulettePending = false;
+          const resultBalance = auraBigInt(data.balance);
+          if (resultBalance === null ||
+              !["red", "black", "green"].includes(data.resultColor) ||
+              !Number.isInteger(data.pocket) || data.pocket < 0 || data.pocket >= 13 ||
+              (data.pocket === 12 ? "green" : data.pocket % 2 === 0 ? "red" : "black") !== data.resultColor ||
+              auraBigInt(data.stake) === null || auraBigInt(data.stake) < 1n ||
+              auraBigInt(data.payout) === null ||
+              typeof data.won !== "boolean" ||
+              !Number.isInteger(data.player) || ![1, 2].includes(data.player) ||
+              !Array.isArray(data.bets) || data.bets.length !== 2 ||
+              data.bets.some(bet => !bet || !["red", "black", "green"].includes(bet.color) ||
+                auraBigInt(bet.stake) === null || auraBigInt(bet.stake) < 1n ||
+                auraBigInt(bet.payout) === null ||
+                typeof bet.won !== "boolean")) {
+            document.getElementById("online-roulette-status").textContent =
+              "The server returned an invalid Aura balance. Reload your cloud save before playing again.";
+          } else {
+            state.chips = resultBalance;
+            const resultColor = data.resultColor.toUpperCase();
+            const betSummary = data.bets.map((bet, index) =>
+              "Player " + (index + 1) + " chose " + bet.color + " for " +
+              formatAura(bet.stake) + " Aura and " +
+              (bet.won ? "won " + formatAura(bet.payout) : "lost the stake") + ".").join(" ");
+            onlineRouletteAnimating = true;
+            document.getElementById("online-roulette-status").textContent = "The shared roulette wheel is spinning…";
+            const duration = animateColorRouletteWheel(
+              document.getElementById("online-color-roulette-wheel"), data.pocket);
+            saveGame();
+            render();
+            window.setTimeout(() => {
+              onlineRouletteAnimating = false;
+              document.getElementById("online-color-roulette-wheel").parentElement.dataset.spinning = "false";
+              document.getElementById("online-roulette-status").textContent =
+                resultColor + "! " + betSummary + " Your balance is " + formatAura(data.balance) + ".";
+              updateOnlineButtons();
+            }, duration + 100);
+          }
+          updateOnlineButtons();
         } else if (data.type === "race-started") {
           onlineRaceActive = true;
-          onlineRaceType = data.raceType === "economy" ? "economy" : "click";
+          onlineRaceType = normalizeOnlineMode(data.raceType);
           document.getElementById("online-score-one").textContent = "0";
           document.getElementById("online-score-two").textContent = "0";
           document.getElementById("online-score-one").parentElement.firstChild.textContent =
@@ -3363,6 +3653,7 @@
           onlinePlayers = 1;
           onlineRaceActive = false;
           onlineRaceType = "click";
+          onlineRoulettePending = false;
           onlineEconomyPlayers = [];
           window.clearInterval(onlineRaceTimer);
           onlineRaceTimer = null;
@@ -3380,6 +3671,7 @@
           onlinePlayers = 0;
           onlineRaceActive = false;
           onlineRaceType = "click";
+          onlineRoulettePending = false;
           onlineEconomyPlayers = [];
           window.clearInterval(onlineRaceTimer);
           onlineRaceTimer = null;
@@ -3402,6 +3694,7 @@
         window.clearInterval(onlineRaceTimer);
         onlineRaceTimer = null;
         onlineRaceType = "click";
+        onlineRoulettePending = false;
         onlineEconomyPlayers = [];
         onlineRoom = null;
         onlineRoomMode = null;
@@ -3451,8 +3744,18 @@
     document.getElementById("online-economy-auto-upgrade").addEventListener("click", () => {
       sendOnlineMessage({ type: "economy-upgrade", upgrade: "auto" });
     });
+    document.getElementById("online-roulette-bet").addEventListener("click", () => {
+      const stake = auraBigInt(document.getElementById("online-roulette-stake").value);
+      sendOnlineMessage({
+        type: "roulette-bet",
+        color: document.getElementById("online-roulette-color").value,
+        stake: stake === null ? "" : stake.toString()
+      });
+    });
+    document.getElementById("online-roulette-stake").addEventListener("input", renderOnlineRoulette);
+    document.getElementById("online-roulette-color").addEventListener("change", renderOnlineRoulette);
     document.getElementById("online-mode").addEventListener("change", event => {
-      onlineRaceType = event.target.value === "economy" ? "economy" : "click";
+      onlineRaceType = normalizeOnlineMode(event.target.value);
       updateOnlineButtons();
     });
     document.getElementById("online-trade-offer").addEventListener("click", () => {
@@ -3497,6 +3800,8 @@
       }, 550);
       collect(state.tapPower);
     });
+    document.addEventListener("contextmenu", event => event.preventDefault());
+    document.addEventListener("dblclick", event => event.preventDefault());
     upgradeList.addEventListener("click", event => {
       const button = event.target.closest("button[data-upgrade-index]");
       if (button) purchaseUpgrade(Number(button.dataset.upgradeIndex));
@@ -3539,32 +3844,32 @@
       }
     });
     document.getElementById("admin-add-aura").addEventListener("click", () => {
-      const amount = Number(document.getElementById("admin-aura-amount").value);
-    if (!Number.isSafeInteger(amount) || amount < 0) {
-      document.getElementById("admin-status").textContent = "Enter a whole Aura amount of zero or more.";
+      const amount = auraBigInt(document.getElementById("admin-aura-amount").value);
+      if (amount === null) {
+        document.getElementById("admin-status").textContent = "Enter a whole Aura amount within the supported range.";
         return;
       }
-    if (amount === 0) {
-      document.getElementById("admin-status").textContent = "Enter a positive Aura amount to add.";
-      return;
-    }
-    void performAdminAction("adjust-aura", { amount });
+      if (amount === 0n) {
+        document.getElementById("admin-status").textContent = "Enter a positive Aura amount to add.";
+        return;
+      }
+      void performAdminAction("adjust-aura", { amount: amount.toString() });
     });
     document.getElementById("admin-remove-aura").addEventListener("click", () => {
-    const amount = Number(document.getElementById("admin-aura-amount").value);
-    if (!Number.isSafeInteger(amount) || amount <= 0) {
-      document.getElementById("admin-status").textContent = "Enter a positive whole Aura amount.";
-      return;
-    }
-    void performAdminAction("adjust-aura", { amount: -amount });
+      const amount = auraBigInt(document.getElementById("admin-aura-amount").value);
+      if (amount === null || amount <= 0n) {
+        document.getElementById("admin-status").textContent = "Enter a positive whole Aura amount.";
+        return;
+      }
+      void performAdminAction("adjust-aura", { amount: (-amount).toString() });
     });
     document.getElementById("admin-set-aura").addEventListener("click", () => {
-    const amount = Number(document.getElementById("admin-aura-amount").value);
-    if (!Number.isSafeInteger(amount) || amount < 0) {
-      document.getElementById("admin-status").textContent = "Enter a whole Aura balance of zero or more.";
-      return;
-    }
-    void performAdminAction("set-aura", { amount });
+      const amount = auraBigInt(document.getElementById("admin-aura-amount").value);
+      if (amount === null) {
+        document.getElementById("admin-status").textContent = "Enter a whole Aura balance within the supported range.";
+        return;
+      }
+      void performAdminAction("set-aura", { amount: amount.toString() });
     });
     document.getElementById("admin-grant-cosmetics").addEventListener("click", () => {
       if (window.confirm("Grant every emoji skin and background to this account?")) {
@@ -3645,7 +3950,7 @@
         authUser = result.username;
         authPlayerId = result.playerId;
         authReady = true;
-        lastCloudSave = JSON.stringify(state);
+        lastCloudSave = serializedState();
         document.getElementById("signup-password").value = "";
         document.getElementById("signup-password-confirm").value = "";
         setAccountMessage("Account created. Your game is backed up to the cloud.");
@@ -3666,7 +3971,7 @@
         const result = await accountRequest("/api/auth/login", { username, password });
         authToken = result.sessionToken;
         localStorage.setItem("aura-session-token", authToken);
-        if (JSON.stringify(state) !== JSON.stringify(result.save) &&
+        if (serializedState() !== JSON.stringify(result.save) &&
             !window.confirm("Loading the cloud save will replace this browser's current game. Do you want to continue?")) {
           await accountRequest("/api/auth/logout", {});
           authToken = "";
@@ -3679,7 +3984,7 @@
         authUser = result.username;
         authPlayerId = result.playerId;
         authReady = true;
-        lastCloudSave = JSON.stringify(state);
+        lastCloudSave = serializedState();
         document.getElementById("login-password").value = "";
         setAccountMessage("Signed in. Your cloud save is loaded.");
         await refreshFriends();
@@ -3740,7 +4045,7 @@
     document.querySelectorAll(".online-connect").forEach(button => {
       button.addEventListener("click", () => {
         if (socket && socket.readyState === WebSocket.OPEN) {
-          setOnlineStatus("You are connected and can receive friend race invites.");
+          setOnlineStatus("You are connected and can receive friend game invites.");
         } else {
           connectOnline({ type: "connect" });
         }
@@ -3805,8 +4110,31 @@
     });
     spinButton.addEventListener("click", spinBonusWheel);
     document.getElementById("aura-bet").addEventListener("input", render);
+    document.querySelectorAll(".roulette-color-button").forEach(button => {
+      button.addEventListener("click", () => {
+        selectedRouletteColor = button.dataset.rouletteColor;
+        colorRouletteMessage = "";
+        render();
+      });
+    });
+    document.getElementById("color-roulette-stake").addEventListener("input", () => {
+      colorRouletteMessage = "";
+      render();
+    });
+    document.getElementById("color-roulette-spin").addEventListener("click", spinColorRoulette);
+    document.getElementById("color-roulette-online").addEventListener("click", () => {
+      showScreen("online");
+      if (onlineRoom || onlineMatchmaking) {
+        setOnlineStatus("Leave your current room or player search before starting a Color Roulette game.");
+        return;
+      }
+      document.getElementById("online-mode").value = "roulette";
+      onlineRaceType = "roulette";
+      updateOnlineButtons();
+      setOnlineStatus("Choose a player room or search for a real player to start Color Roulette.");
+    });
     document.getElementById("bet-all").addEventListener("click", () => {
-      document.getElementById("aura-bet").value = String(state.chips);
+      document.getElementById("aura-bet").value = state.chips.toString();
       render();
     });
     document.getElementById("coin-stake").addEventListener("input", render);
@@ -3899,13 +4227,22 @@
       window.clearTimeout(caseTimer);
       window.clearInterval(caseRollTimer);
       window.clearTimeout(emojiReactionTimer);
+      window.clearTimeout(colorRouletteTimer);
+      colorRouletteTimer = null;
       race = null;
       wheelSpinning = false;
+      colorRouletteSpinning = false;
+      colorRouletteMessage = "";
       caseTimer = null;
       caseRollTimer = null;
       document.getElementById("case-box").classList.remove("opening", "revealed");
       document.getElementById("case-box").style.removeProperty("--rarity-color");
       document.getElementById("case-box").textContent = "🎁";
+      const colorWheel = document.getElementById("color-roulette-wheel");
+      colorWheel.style.transform = "rotate(0deg)";
+      colorWheel.parentElement.dataset.spinning = "false";
+      colorWheelRotations.delete(colorWheel);
+      onlineRouletteAnimating = false;
       emojiReactionTimer = null;
       emojiReactionUntil = 0;
       emojiReactionEmoji = "";
